@@ -198,14 +198,28 @@
                     BOOL isNavBar = [v isKindOfClass:[UINavigationBar class]];
                     BOOL contain = CGRectContainsPoint(rect, point);
                     if (isNavBar && contain && v != touchView) {
-                        
+                        // UINavigationBar
                         NSArray *barSubviews = [v subviews];
                         if (barSubviews && barSubviews.count > 0) {
+                            
+                            // UINavigationBar的内容子视图
+                            UIView *barContentView;
+                            
                             for (int ni = 0; ni < barSubviews.count; ni++) {
                                 UIView *barSubV = barSubviews[ni];
+                                
+                                NSLog(@"导航视图类别：%@", NSStringFromClass([barSubV class]));
                                 CGRect barSubVRect = [barSubV convertRect:barSubV.bounds toView:window];
                                 BOOL barSubContain = CGRectContainsPoint(barSubVRect, point);
-                                if (barSubContain) {
+                                NSString *classString = NSStringFromClass([barSubV class]);
+                                
+                                if ([classString isEqualToString:@"_UINavigationBarContentView"]) {
+                                    barContentView = barSubV;
+                                }
+                                
+                                NSArray *sysClass = @[@"_UINavigationBarContentView", @"_UIBarBackground", @"_UINavigationBarModernPromptView", @"_UINavigationBarLargeTitleView"];
+                                BOOL isSys = [sysClass containsObject:classString];
+                                if (barSubContain && !isSys) {
                                     [coverView setFrame:barSubVRect];
                                     [window addSubview:coverView];
                                     currentView = barSubV;
@@ -213,6 +227,34 @@
                                     break;
                                 }
                             }
+                            
+                            // 导航栏上无自行添加的视图，则再遍历子视图
+                            if (!touched && barContentView) {
+                                NSArray *barContentSubViews = barContentView.subviews;
+                                if (barContentSubViews && barContentSubViews.count > 0) {
+                                    for (int barI = 0; barI < barContentSubViews.count; barI++) {
+                                        UIView *bv = barContentSubViews[barI];
+                                        CGRect bvRect = [bv convertRect:bv.bounds toView:window];
+                                        BOOL bvContain = CGRectContainsPoint(bvRect, point);
+                                        if (bvContain) {
+                                            [coverView setFrame:bvRect];
+                                            [window addSubview:coverView];
+                                            currentView = bv;
+                                            touched = YES;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+//                            else {
+//                                
+//                                [coverView setFrame:rect];
+//                                [window addSubview:coverView];
+//                                currentView = v;
+//                                touched = YES;
+//                                
+//                            }
+                            
                         } else {
                             [coverView setFrame:rect];
                             [window addSubview:coverView];
